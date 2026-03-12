@@ -1,0 +1,60 @@
+version: "3.9"
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: "shtanko-bv-netology-prometheus"
+    restart: unless-stopped
+    depends_on:
+      - pushgateway
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus_data:/prometheus
+      - ./prometheus:/etc/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    networks:
+      my-netology-hw:
+        ipv4_address: 10.5.0.10
+
+  pushgateway:
+    image: prom/pushgateway:latest
+    container_name: "shtanko-bv-netology-pushgateway"
+    restart: unless-stopped
+    ports:
+      - "9091:9091"
+    networks:
+      my-netology-hw:
+        ipv4_address: 10.5.0.11
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: "shtanko-bv-netology-grafana"
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    ports:
+      - "80:3000"
+    environment:
+      GF_PATHS_CONFIG: /etc/grafana/grafana.ini
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      my-netology-hw:
+        ipv4_address: 10.5.0.12
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  my-netology-hw:
+    name: "shtanko-bv-my-netology-hw"
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.5.0.0/16
